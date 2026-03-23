@@ -1,126 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notion Habit Heatmap</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #faf8f5; --surface: #ffffff; --border: #ede9e3;
-    --text: #1a1714; --muted: #8c8278; --accent: #c97b8a;
-    --l0: #ede9e3; --l1: #f4c8d2; --l2: #e8a0b0; --l3: #c97b8a; --l4: #a0495c;
-    --radius: 10px;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1rem; }
-  .container { max-width: 920px; margin: 0 auto; }
-  header { margin-bottom: 2rem; }
-  header h1 { font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; }
-  header h1 em { color: var(--accent); font-style: italic; }
-  header p { font-size: 13px; color: var(--muted); margin-top: 5px; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .stat-val { font-size: 26px; font-weight: 500; color: var(--text); line-height: 1; }
-  .stat-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; overflow: hidden; }
-  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
-  .pill { font-size: 12px; font-family: 'DM Sans', sans-serif; padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-  .pill:hover { border-color: var(--accent); color: var(--accent); }
-  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .heatmap-outer { overflow-x: auto; padding-bottom: 4px; }
-  .month-row { display: flex; gap: 3px; padding-left: 26px; margin-bottom: 5px; }
-  .month-cell { font-size: 10px; color: var(--muted); flex-shrink: 0; }
-  .grid-rows { display: flex; flex-direction: column; gap: 3px; }
-  .dow-row { display: flex; align-items: center; gap: 3px; }
-  .dow-label { font-size: 10px; color: var(--muted); width: 22px; text-align: right; flex-shrink: 0; }
-  .cols { display: flex; gap: 3px; }
-  .sq { width: 13px; height: 13px; border-radius: 3px; cursor: pointer; transition: transform 0.12s; flex-shrink: 0; }
-  .sq:hover { transform: scale(1.4); z-index: 5; position: relative; }
-  .sq.empty { visibility: hidden; pointer-events: none; }
-  .l0 { background: var(--l0); } .l1 { background: var(--l1); } .l2 { background: var(--l2); } .l3 { background: var(--l3); } .l4 { background: var(--l4); }
-  .legend { display: flex; align-items: center; gap: 5px; margin-top: 12px; }
-  .legend span { font-size: 11px; color: var(--muted); }
-  .leg-sq { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
-  .tooltip { position: fixed; background: #1a1714; color: #fff; font-size: 11px; padding: 7px 11px; border-radius: 7px; pointer-events: none; z-index: 9999; display: none; max-width: 200px; line-height: 1.6; }
-  @media (max-width: 600px) { .stats { grid-template-columns: repeat(2,1fr); } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Habit Heatmap</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff; --surface: #ffffff; --border: transparent;
+            --text: #1a1714; --muted: #8c8278; --accent: #c97b8a;
+            --l0: #ede9e3; --l1: #f4c8d2; --l2: #e8a0b0; --l3: #c97b8a; --l4: #a0495c;
+            --radius: 10px;
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; overflow-x: hidden; }
+        .card { background: var(--surface); border: none; padding: 1rem; }
+        header h1 { font-family: 'DM Serif Display', serif; font-size: 24px; margin: 0 0 15px 0; font-weight: 400; }
+        header h1 em { color: var(--accent); font-style: italic; }
+        .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+        .pill { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid #ede9e3; background: white; color: var(--muted); cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .heatmap-container { overflow-x: auto; padding-bottom: 10px; cursor: crosshair; }
+        .grid { display: flex; flex-direction: column; gap: 3px; min-width: 800px; }
+        .row { display: flex; gap: 3px; align-items: center; }
+        .label { font-size: 9px; color: var(--muted); width: 22px; text-align: right; margin-right: 4px; text-transform: uppercase; }
+        .sq { width: 12px; height: 12px; border-radius: 2px; background: var(--l0); transition: 0.1s; }
+        .sq:hover { transform: scale(1.4); z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .l1 { background: var(--l1); } .l2 { background: var(--l2); } .l3 { background: var(--l3); } .l4 { background: var(--l4); }
+        .legend { display: flex; align-items: center; gap: 5px; margin-top: 15px; font-size: 10px; color: var(--muted); }
+        .leg-sq { width: 10px; height: 10px; border-radius: 2px; }
+        /* Hide scrollbar */
+        .heatmap-container::-webkit-scrollbar { height: 4px; }
+        .heatmap-container::-webkit-scrollbar-thumb { background: #ede9e3; border-radius: 10px; }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>habit <em>heatmap</em></h1>
-    <p>live from your notion database</p>
-  </header>
-  <div class="stats" id="stats"></div>
-  <div class="card">
-    <div class="pills" id="pills"></div>
-    <div class="heatmap-outer">
-      <div class="month-row" id="monthRow"></div>
-      <div class="grid-rows" id="gridRows"></div>
+
+<div class="card">
+    <header>
+        <h1>habit <em>heatmap</em></h1>
+    </header>
+    
+    <div id="pills" class="pills">Detecting Notion habits...</div>
+    
+    <div class="heatmap-container">
+        <div id="heatmap-grid" class="grid"></div>
     </div>
+
     <div class="legend">
-      <span>less</span>
-      <div class="leg-sq l0"></div><div class="leg-sq l1"></div><div class="leg-sq l2"></div><div class="leg-sq l3"></div><div class="leg-sq l4"></div>
-      <span>more</span>
+        <span>less</span>
+        <div class="leg-sq" style="background: var(--l0)"></div>
+        <div class="leg-sq l1"></div>
+        <div class="leg-sq l2"></div>
+        <div class="leg-sq l3"></div>
+        <div class="leg-sq l4"></div>
+        <span>more</span>
     </div>
-  </div>
 </div>
-<div class="tooltip" id="tooltip"></div>
 
 <script>
-// --- LIVE CONFIGURATION ---
-const PIPEDREAM_URL = "https://eohcysxaf5z2hhd.m.pipedream.net"; 
-const HABITS = ['Working Out','Studying','Content Creation','Editing','Skincare','Water Intake'];
-// --------------------------
+    const PIPEDREAM_URL = "https://eohcysxaf5z2hhd.m.pipedream.net"; 
 
-const DAYS = 364;
-const today = new Date(); today.setHours(0,0,0,0);
-const data = {};
+    let allData = [];
+    let habits = [];
+    let activeHabit = "Overview";
 
-function dayAt(n) { const d = new Date(today); d.setDate(d.getDate()-(DAYS-1)+n); return d; }
+    async function init() {
+        try {
+            const res = await fetch(PIPEDREAM_URL);
+            allData = await res.json();
 
-async function loadData() {
-  try {
-    const response = await fetch(PIPEDREAM_URL);
-    const results = await response.json();
-    
-    results.forEach(page => {
-      const dateKey = page.properties.Date?.date?.start;
-      if (dateKey) {
-        data[dateKey] = {};
-        HABITS.forEach(h => {
-          data[dateKey][h] = page.properties[h]?.checkbox ? 1 : 0;
-        });
-      }
-    });
-    render();
-  } catch (e) { console.error("Data load failed", e); }
-}
+            if (allData.length > 0) {
+                // Automatically find all Checkbox properties
+                const props = allData[0].properties;
+                habits = Object.keys(props).filter(key => props[key].type === "checkbox");
+                habits.sort(); 
+            }
 
-let active='all';
-function lvl(k) { if(!data[k])return 0; if(active==='all'){const n=HABITS.reduce((s,h)=>s+(data[k][h]||0),0);return n===0?0:n<=1?1:n<=2?2:n<=4?3:4;} return data[k][active]?3:0; }
+            renderPills();
+            renderHeatmap();
+        } catch (e) {
+            document.getElementById('pills').innerText = "Connection error. Check Notion/Pipedream.";
+        }
+    }
 
-function render() {
-  const startDow=dayAt(0).getDay(), totalWeeks=Math.ceil((DAYS+startDow)/7);
-  const DOW=['S','M','T','W','T','F','S'], weekCols=[], monthMap={};
-  for(let w=0;w<totalWeeks;w++){const col=[];for(let d=0;d<7;d++){const idx=w*7+d-startDow;if(idx>=0&&idx<DAYS){const date=dayAt(idx),k=date.toISOString().slice(0,10),mk=date.getFullYear()+'-'+date.getMonth();if(!monthMap[mk])monthMap[mk]={w,name:date.toLocaleString('default',{month:'short'})};col.push({k,dow:d});}else col.push(null);}weekCols.push(col);}
-  const mr=document.getElementById('monthRow'); mr.innerHTML=''; let prev=0;
-  Object.values(monthMap).forEach(({w,name})=>{const c=document.createElement('div');c.className='month-cell';c.style.minWidth=((w-prev)*16)+'px';c.textContent=name;mr.appendChild(c);prev=w;});
-  const gr=document.getElementById('gridRows'); gr.innerHTML='';
-  for(let dow=0;dow<7;dow++){const row=document.createElement('div');row.className='dow-row';const lbl=document.createElement('div');lbl.className='dow-label';lbl.textContent=dow%2===1?DOW[dow]:'';row.appendChild(lbl);const cols=document.createElement('div');cols.className='cols';weekCols.forEach(col=>{const sq=document.createElement('div'),cell=col[dow];if(!cell){sq.className='sq empty';}else{sq.className='sq l'+lvl(cell.k);sq.dataset.key=cell.k;sq.addEventListener('mouseenter',showTip);sq.addEventListener('mouseleave',hideTip);}cols.appendChild(sq);});row.appendChild(cols);gr.appendChild(row);}
-  renderStats();
-}
-
-function showTip(e){const k=e.target.dataset.key;if(!k)return;const d=new Date(k+'T00:00:00'),tip=document.getElementById('tooltip');const ds=d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric',year:'numeric'});let body=active==='all'?(HABITS.filter(h=>data[k] && data[k][h]).join('<br>')||'nothing logged'):(active+': '+(data[k] && data[k][active]?'✓ done':'✗ not done'));tip.innerHTML='<strong style="display:block;margin-bottom:4px">'+ds+'</strong>'+body;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-10)+'px';}
-function hideTip(){document.getElementById('tooltip').style.display='none';}
-
-function renderStats(){let total=0,streak=0,best=0,cur=0;for(let i=0;i<DAYS;i++){const k=dayAt(i).toISOString().slice(0,10),done=active==='all'?(data[k] && HABITS.some(h=>data[k][h])):(data[k] && !!data[k][active]);if(done){total++;cur++;best=Math.max(best,cur);}else cur=0;}for(let i=DAYS-1;i>=0;i--){const k=dayAt(i).toISOString().slice(0,10),done=active==='all'?(data[k] && HABITS.some(h=>data[k][h])):(data[k] && !!data[k][active]);if(done)streak++;else break;}const pct=Math.round((total/DAYS)*100);document.getElementById('stats').innerHTML=`<div class="stat"><div class="stat-label">current streak</div><div class="stat-val">${streak}</div><div class="stat-unit">days</div></div><div class="stat"><div class="stat-label">best streak</div><div class="stat-val">${best}</div><div class="stat-unit">days</div></div><div class="stat"><div class="stat-label">completion</div><div class="stat-val">${pct}%</div><div class="stat-unit">last 52 weeks</div></div><div class="stat"><div class="stat-label">days logged</div><div class="stat-val">${total}</div><div class="stat-unit">total</div></div>`;}
-
-const pe=document.getElementById('pills');['all',...HABITS].forEach(h=>{const p=document.createElement('button');p.className='pill'+(h==='all'?' active':'');p.textContent=h==='all'?'all habits':h.toLowerCase();p.addEventListener('click',()=>{active=h;document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));p.classList.add('active');render();});pe.appendChild(p);});
-
-loadData();
-</script>
-</body>
-</html>
+    function renderPills
